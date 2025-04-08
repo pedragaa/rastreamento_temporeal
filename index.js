@@ -7,16 +7,13 @@ require('dotenv').config();
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIO(server, {
-  cors: { origin: '*' }
-});
+const io = socketIO(server, { cors: { origin: '*' } });
 
 app.use(cors());
 app.use(express.json());
 
 async function startServer() {
   try {
-    // MySQL conexão
     const db = await mysql.createConnection({
       host: process.env.DB_HOST || 'localhost',
       user: process.env.DB_USER || 'root',
@@ -26,7 +23,6 @@ async function startServer() {
 
     console.log('✅ Conectado ao banco MySQL');
 
-    // Socket.io listener
     io.on('connection', (socket) => {
       console.log('🚚 Cliente conectado via WebSocket');
 
@@ -36,13 +32,11 @@ async function startServer() {
         console.log(`📍 Localização recebida do entregador ${entregadorId}: ${latitude}, ${longitude}`);
 
         try {
-          // Salva no banco
           await db.execute(
             'INSERT INTO localizacoes (entregador_id, latitude, longitude) VALUES (?, ?, ?)',
             [entregadorId, latitude, longitude]
           );
 
-          // Busca a última viagem do entregador
           const [viagens] = await db.execute(
             'SELECT ponto_inicio_lat, ponto_inicio_lng, ponto_fim_lat, ponto_fim_lng FROM viagens WHERE entregador_id = ? ORDER BY id DESC LIMIT 1',
             [entregadorId]
@@ -63,19 +57,16 @@ async function startServer() {
               longitude: parseFloat(viagem.ponto_fim_lng)
             };
 
-            // Cálculo simples de distância
             const distancia = Math.sqrt(
               Math.pow(destino.latitude - latitude, 2) +
               Math.pow(destino.longitude - longitude, 2)
             );
 
-            // Define status como "chegou" se a distância for pequena
             if (distancia < 0.0005) {
               status = 'chegou';
             }
           }
 
-          // Emite para o gestor
           io.emit('location:gestorUpdate', {
             entregadorId,
             latitude,
@@ -96,12 +87,10 @@ async function startServer() {
       });
     });
 
-    // Teste HTTP simples
     app.get('/', (req, res) => {
       res.send('Servidor rodando com WebSocket!');
     });
 
-    // Rota para buscar viagem pelo entregador
     app.get('/viagem/:entregadorId', async (req, res) => {
       const { entregadorId } = req.params;
 
@@ -130,5 +119,57 @@ async function startServer() {
   }
 }
 
-// Iniciar tudo
+const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
+
+app.post('/rota', async (req, res) => {
+  const { origem, destino } = req.body;
+
+  console.log('🔄 Recebido na rota /rota');
+  console.log('📍 Origem:', origem);
+  console.log('📍 Destino:', destino);
+
+  if (
+    !origem || !destino ||
+    origem.latitude == null || origem.longitude == null ||
+    destino.latitude == null || destino.longitude == null
+  ) {
+    console.warn('⚠️ Coordenadas inválidas detectadas');
+    return res.status(400).json({ message: 'Coordenadas inválidas' });
+  }
+
+  try {
+    const bodyData = {
+      coordinates: [
+        [origem.longitude, origem.latitude],
+        [destino.longitude, destino.latitude]
+      ]
+    };
+
+    console.log('📦 Enviando para OpenRoute:', JSON.stringify(bodyData));
+
+    const response = await fetch('https://api.openrouteservice.org/v2/directions/driving-car', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: process.env.OPENROUTE_API_KEY || '5b3ce3597851110001cf62489e9169b13ab940d9aa43d0b73dfa268a'
+      },
+      body: JSON.stringify(bodyData),
+    });
+
+    const data = await response.json();
+
+    if (!data || !data.routes || data.routes.length === 0) {
+      console.error('❌ Rota não encontrada na resposta da API:', data);
+      return res.status(404).json({ message: 'Rota não encontrada' });
+    }
+
+    console.log('✅ Rota recebida com sucesso!');
+    res.json(data);
+  } catch (error) {
+    console.error('🔥 ERRO FATAL AO BUSCAR ROTA:', error);
+    res.status(500).json({ message: 'Erro interno ao buscar rota', error: error.message });
+  }
+});
+
+
 startServer();

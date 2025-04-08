@@ -1,26 +1,31 @@
 import React from 'react';
 import MapaEntregadores from './components/MapaEntregadores';
 
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
-import markerIcon from 'leaflet/dist/images/marker-icon.png';
-import markerShadow from 'leaflet/dist/images/marker-shadow.png';
-
-// Corrige os ícones padrão do Leaflet
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: markerIcon2x,
-  iconUrl: markerIcon,
-  shadowUrl: markerShadow,
-});
-
 function App() {
+  const entregadores = [
+    {
+      latitude: -23.55052,
+      longitude: -46.633308,
+      origem: { latitude: -23.55052, longitude: -46.633308 },
+      destino: { latitude: -23.559616, longitude: -46.658722 },
+    },
+    {
+      latitude: -23.5621,
+      longitude: -46.6525,
+      origem: { latitude: -23.5621, longitude: -46.6525 },
+      destino: { latitude: -23.5682, longitude: -46.6395 },
+    },
+    {
+      latitude: -23.5532,
+      longitude: -46.6267,
+      origem: { latitude: -23.5532, longitude: -46.6267 },
+      destino: { latitude: -23.5454, longitude: -46.6348 },
+    },
+  ];
+
   return (
-    <div style={{ height: '100vh', width: '100vw', display: 'flex', flexDirection: 'column' }}>
-      <h1 style={{ textAlign: 'center', margin: '10px 0' }}>📍 Painel do Gestor</h1>
-      <div style={{ flex: 1 }}>
-        <MapaEntregadores />
-      </div>
+    <div style={{ height: '100vh', width: '100vw' }}>
+      <MapaEntregadores entregadores={entregadores} />
     </div>
   );
 }
