@@ -38,3 +38,5 @@ const intervalo = setInterval(() => {
 
   console.log(`📦 Enviando posição: ${latitude}, ${longitude}`);
 }, 2000);
+
+// Finalizado
