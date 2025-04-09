@@ -37,25 +37,16 @@ seu-projeto/
 Abra 3 terminais diferentes.
 
 No primeiro terminal, rode o servidor principal:
-
-bash
-Copiar
-Editar
 node index.js
+
 No segundo terminal, rode o simulador de movimento:
-
-bash
-Copiar
-Editar
 node simulador.js
-No terceiro terminal, entre na pasta do painel (frontend React):
 
-bash
-Copiar
-Editar
+No terceiro terminal, entre na pasta do painel (frontend React):
 cd painel-gestor
 npm install
 npm run dev
+
 Acesse o projeto no navegador:
 👉 http://localhost:5173
 
